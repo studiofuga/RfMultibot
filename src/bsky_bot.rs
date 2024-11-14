@@ -1,8 +1,6 @@
-use bsky_sdk::{api, BskyAgent};
-
+use bsky_sdk::BskyAgent;
 use bsky_sdk::api::app::bsky::feed::post as post;
 use bsky_sdk::api::types::string;
-use chrono::DateTime;
 use tokio::sync::mpsc::Receiver;
 use crate::bsky_bot;
 
@@ -39,12 +37,21 @@ impl BSkyBot {
     }
 
     pub async fn start(&mut self) {
-        self.agent.login(&self.config.user, &self.config.pass);
+        let logged_in = self.agent.login(&self.config.user, &self.config.pass).await;
+        match logged_in {
+            Ok(_) => {
+                println!("Logged in!");
+            }
+            Err(what) => {
+                panic!("Failed to log in: {:?}", what);
+            }
+        }
 
         while let Some(action) = self.rx.recv().await {
             match action {
                 BSkyBotAction::Post { title, text } => {
-                    self.agent.create_record(post::RecordData{
+                    println!("New post: {}", &title);
+                    let res = self.agent.create_record(post::RecordData{
                         created_at: string::Datetime::now(),
                         embed: None,
                         entities: None,
@@ -54,7 +61,16 @@ impl BSkyBot {
                         reply: None,
                         tags: None,
                         text : text,
-                    }).await.unwrap();
+                    }).await;
+
+                    match res {
+                        Ok(_) => {
+                            println!("Post sent");
+                        }
+                        Err(what) => {
+                            panic!("Failed to create post: {:?}", what);
+                        }
+                    }
                 }
             }
         }

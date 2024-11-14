@@ -1,13 +1,13 @@
 mod bsky_bot;
 
+use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
 use tokio::sync::mpsc;
-use tokio::sync::mpsc::{Sender,Receiver};
+use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_schedule::{every, Job};
-use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 
 async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
-    let mut bsky_bot = BSkyBot::new(rx, "username".to_string(), "password".to_string()).await;
+    let mut bsky_bot = BSkyBot::new(rx, user, pass).await;
     bsky_bot
 }
 
@@ -15,12 +15,17 @@ struct Bots {
     bsky_bot: BSkyBot,
 }
 
-fn do_poll(tx: Sender<BSkyBotAction>) {
+async fn do_poll(tx: Sender<BSkyBotAction>) {
     println!("poll");
-    tx.send(BSkyBotAction::Post {
+    let post_res = tx.send(BSkyBotAction::Post {
         title: "Sample".to_string(),
         text: "This is a sample text".to_string(),
-    });
+    }).await;
+
+    match post_res {
+        Ok(_) => { println!("Post create"); },
+        Err(err) => { println!("Post create failed: {}", err); }
+    }
 }
 
 #[tokio::main]
@@ -36,11 +41,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bsky_bot.start().await;
     });
 
-    {
-        let poll = every(1).minute()
-            .perform(|| async { do_poll(tx.clone()); });
-        poll.await; // This should be outside this block, to prevent tx_copy to leak
-    }
+    println!("Started bsky bot");
+
+    let poll = every(1).minute()
+        .perform(|| async { do_poll(tx.clone()).await; });
+    poll.await;
 
     Ok(())
 }
