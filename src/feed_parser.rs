@@ -5,6 +5,3 @@ pub fn parse_feed(xml : String, feed: &mut Feed) -> Result<i32, String> {
 
     Ok(1)
 }
-
-#[cfg(test)]
-mod feed_parser_test;

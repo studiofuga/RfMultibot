@@ -1,12 +1,11 @@
 #[cfg(test)]
-mod feed_parser_tests {
-    use chrono::format::parse;
-    use crate::feed::Feed;
-    use crate::feed_parser;
+use chrono::format::parse;
+use crate::feed::Feed;
+use crate::feed_parser;
 
-    #[test]
-    pub fn feed_parser_test() {
-        let xml = r#"<?xml version='1.0' encoding='UTF-8' ?>
+#[test]
+pub fn feed_parser_test() {
+    let xml = r#"<?xml version='1.0' encoding='UTF-8' ?>
 <rss version='2.0'>
     <channel>
         <title>Ransom Feed | RSS Complete</title>
@@ -40,11 +39,9 @@ mod feed_parser_tests {
 </rss>
 "#;
 
-        let mut feed = Feed::new("something".to_string());
-        let parsed = feed_parser::parse_feed(xml.to_string(), &mut feed);
+    let mut feed = Feed::new("something".to_string());
+    let parsed = feed_parser::parse_feed(xml.to_string(), &mut feed);
 
-        assert_eq!(parsed.unwrap(), 2);
-        assert_eq!(feed.feeds.len(), 2);
-
-    }
+    assert_eq!(parsed.unwrap(), 2);
+    assert_eq!(feed.feeds.len(), 2);
 }
