@@ -1,6 +1,8 @@
+use chrono::DateTime;
 #[cfg(test)]
-use chrono::format::parse;
+
 use crate::feed::Feed;
+use crate::feed::FeedEntry;
 use crate::feed_parser;
 
 #[test]
@@ -11,8 +13,8 @@ pub fn feed_parser_test() {
         <title>Ransom Feed | RSS Complete</title>
         <link>http://www.ransomfeed.it/</link>
         <description>Ransomware victims RSS
-            <img referrerpolicy=\"no-referrer-when-downgrade\"
-            src=\"https://matomo.ransomfeed.it/matomo.php?idsite=1&amp;rec=1\" style="border:0" alt=\"\"/>
+            <img referrerpolicy="no-referrer-when-downgrade"
+            src="https://matomo.ransomfeed.it/matomo.php?idsite=1&amp;rec=1" style="border:0" alt=""/>
         </description>
         <language>en-us</language>
         <item xmlns:dc='ns:1'>
@@ -44,4 +46,15 @@ pub fn feed_parser_test() {
 
     assert_eq!(parsed.unwrap(), 2);
     assert_eq!(feed.feeds.len(), 2);
+
+    assert_eq!(feed.feeds[0],
+        FeedEntry{
+            id: 18641,
+            title: "fortinainvestments.com".to_string(),
+            link: "http://www.ransomfeed.it/index.php?page=post_details&amp;id_post=18641".to_string(),
+            published: DateTime::from(DateTime::parse_from_rfc3339("2024-11-15T05:57:37Z").unwrap()),
+            country: "Malta".to_string(),
+            group: "ransomhub".to_string(),
+        }
+    );
 }

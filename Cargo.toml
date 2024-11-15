@@ -9,3 +9,4 @@ tokio = { version = "1.41.1", features = ["rt", "rt-multi-thread", "macros"] }
 chrono = "0.4.38"
 bsky-sdk = "0.1.12"
 reqwest = "0.12.9"
+feed-rs = "2.1.1"
