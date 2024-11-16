@@ -12,6 +12,7 @@ dependencies = [
  "reqwest",
  "tokio",
  "tokio_schedule",
+ "url",
 ]
 
 [[package]]

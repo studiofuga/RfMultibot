@@ -3,7 +3,8 @@ use reqwest;
 
 #[derive(Debug, PartialEq)]
 pub struct FeedEntry {
-    pub id: i32,
+    pub id: String,
+    pub post_id: i32,
     pub title: String,
     pub link: String,
     pub published: DateTime<Utc>,
@@ -39,7 +40,8 @@ impl Feed {
 impl FeedEntry {
     pub fn new (title: String) -> Self {
         FeedEntry{
-            id: 0,
+            id: "".to_string(),
+            post_id: 0,
             title,
             link: "".to_string(),
             published: Default::default(),
