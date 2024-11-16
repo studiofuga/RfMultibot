@@ -8,6 +8,8 @@ use std::env;
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_schedule::{every, Job};
+use crate::feed::Feed;
+use crate::feed_parser::parse_feed;
 
 async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
     let mut bsky_bot = BSkyBot::new(rx, user, pass).await;
@@ -20,9 +22,15 @@ struct Bots {
 
 async fn do_poll(tx: Sender<BSkyBotAction>) {
     println!("poll");
-    let post_res = tx.send(BSkyBotAction::Post {
-        title: "Sample".to_string(),
-        text: "This is a sample text".to_string(),
+    let mut feed = Feed::new("https://ransomfeed.it/rss-complete.php".to_string());
+    let feedxml = feed.get_feed().await.unwrap();
+    println!("Got a feed: {:?} bytes", feedxml.len());
+
+    parse_feed(feedxml, &mut feed).unwrap();
+    println!("feed parsed: {:?} entries", feed.feeds.len());
+
+    let post_res = tx.send(BSkyBotAction::NewFeeds {
+        feeds: feed.feeds.clone(),
     }).await;
 
     match post_res {

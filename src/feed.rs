@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use reqwest;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct FeedEntry {
     pub id: String,
     pub post_id: i32,
