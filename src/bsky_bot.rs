@@ -4,6 +4,7 @@ use bsky_sdk::api::types::string;
 use tokio::sync::mpsc::Receiver;
 use crate::bsky_bot;
 use crate::feed::FeedEntry;
+use crate::storage::Storage;
 
 struct BSkyBotConfig {
     user: String,
@@ -13,6 +14,7 @@ struct BSkyBotConfig {
 pub struct BSkyBot {
     config: BSkyBotConfig,
     agent: BskyAgent,
+    db: Storage,
     rx: Receiver<BSkyBotAction>,
 }
 
@@ -36,6 +38,7 @@ impl BSkyBot {
                 }
             },
             agent: bsky_bot::BskyAgent::builder().build().await.unwrap(),
+            db: Storage::new("bsky-bot.db"),
             rx: rx,
         }
     }
@@ -89,11 +92,32 @@ impl BSkyBot {
     }
 
     async fn feeds_action(&mut self, feeds: Vec<FeedEntry>) {
-        println!("Feeds: {:?}", feeds.len());
-        if feeds.len() > 0 {
-            println!("Feed[0]: {:?}", feeds[0].id);
-            // Filter
-            self.post_action("New Entry".to_string(), feeds[0].title.clone()).await;
+        let mut to_post: Vec<FeedEntry> = vec![];
+        
+        for feedEntry in feeds.iter() {
+            if feedEntry.published < chrono::Utc::now() - chrono::Duration::days(30) {
+                continue;
+            }
+            if !self.db.has_post(&feedEntry.id) {
+                to_post.push(feedEntry.clone());
+                self.db.insert(&feedEntry);
+            }
+        }
+
+        // Sort the feeds to post by their published date, from oldest to newest
+        to_post.sort_by(|a, b| a.published.cmp(&b.published));
+
+        let postable : Vec<FeedEntry> = to_post.into_iter().rev().take(3).collect();
+        for feed in postable.iter() {
+            // Assuming that `feed.published` is a Unix timestamp (in seconds)
+            let published = feed.published.format("%Y-%m-%d %H:%M:%S").to_string();
+
+            let text = format!("ID: {}\n\u{0026A0} {}\n\u{01F977} {}\n\u{01F3AF} {}, {}\n\u{01F517} {}",
+                feed.post_id, published, feed.group, feed.title, feed.country,
+                feed.link
+            );
+
+            self.post_action(feed.title.clone(), text).await;
         }
     }
 }

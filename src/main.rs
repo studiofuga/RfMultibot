@@ -2,6 +2,7 @@ mod bsky_bot;
 mod feed;
 mod feed_parser;
 mod tests;
+mod storage;
 
 use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
