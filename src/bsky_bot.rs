@@ -107,7 +107,7 @@ impl BSkyBot {
         // Sort the feeds to post by their published date, from oldest to newest
         to_post.sort_by(|a, b| a.published.cmp(&b.published));
 
-        let postable : Vec<FeedEntry> = to_post.into_iter().rev().take(3).collect();
+        let postable : Vec<FeedEntry> = to_post.into_iter().rev().take(10).collect();
         for feed in postable.iter() {
             // Assuming that `feed.published` is a Unix timestamp (in seconds)
             let published = feed.published.format("%Y-%m-%d %H:%M:%S").to_string();

@@ -55,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Started bsky bot");
 
-    let poll = every(1).minute()
+    let poll = every(15).minute()
         .perform(|| async { do_poll(tx.clone()).await; });
     poll.await;
 

@@ -43,7 +43,7 @@ impl Storage {
     }
 
     pub fn has_post(&self, guid: &str) -> bool {
-        self.handle.query_row("SELECT 1 FROM posts WHERE guid = ?", params![guid], |_| Ok(true)).is_ok()
+        self.handle.query_row("SELECT 1 FROM posts WHERE id = ?", params![guid], |_| Ok(true)).is_ok()
     }
 
     pub fn insert(&mut self, feed: &FeedEntry) {
