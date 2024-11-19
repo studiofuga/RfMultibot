@@ -37,6 +37,13 @@ Build it as usual:
 $ docker build -t rfeed-bot-image .
 ```
 
+**NOTE**: This is a multistage build. After the first build, cache must be invalidated.
+Use this command
+
+```
+$ docker build -t rfeed-bot-image --no-cache-filter build-app,final .
+```
+
 Create a docker volume for data, for example named `rfeed-bot-data`
 
 ```
@@ -52,7 +59,7 @@ $ docker run --rm --name rfeedbot \
     -e BSKY_USER=your-bsky@account \ 
     -e BSKY_PASS='your-bsky-pass-here' \
     -e DATADIR=\data \
-    --mount source=rfeed-bot-image,target=/data
+    -v rfeed-bot-data:/data \
     rfeed-bot-image
 ```
 
