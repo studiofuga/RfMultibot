@@ -8,6 +8,9 @@ WORKDIR /app
 
 RUN apt-get update && apt-get install -y build-essential libssl-dev pkg-config perl libsqlite3-dev
 
+
+FROM build AS build-app
+WORKDIR /app
 RUN --mount=type=bind,source=src,target=src \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
@@ -19,23 +22,15 @@ cargo build --locked --release
 cp ./target/release/$APP_NAME /bin/rfeed-bot
 EOF
 
-FROM debian:bookworm-slim AS final
+FROM debian:bookworm-slim AS final-prepare
 
-RUN apt-get update && apt-get install -y libsqlite3-0
+RUN apt-get update && apt-get install -y libsqlite3-0 ca-certificates
 
-ARG UID=10001
-RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    appuser
-USER appuser
+
+FROM final-prepare AS final
 
 # Copy the executable from the "build" stage.
-COPY --from=build /bin/rfeed-bot /bin/
+COPY --from=build-app /bin/rfeed-bot /bin/
 
 # What the container should run when it is started.
 CMD ["/bin/rfeed-bot"]

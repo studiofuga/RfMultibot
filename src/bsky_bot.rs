@@ -37,7 +37,7 @@ impl BSkyBot {
         }
 
         let db_filename = env::var("BSKY_DB").unwrap_or_else(|_| format!("{}bsky-bot.db", datapath));
-        let mut db = Storage::new("bsky-bot.db");
+        let mut db = Storage::new(&db_filename);
 
         println!("Using database: {}", db_filename);
 
