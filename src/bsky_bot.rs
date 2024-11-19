@@ -1,3 +1,4 @@
+use std::env;
 use bsky_sdk::BskyAgent;
 use bsky_sdk::api::app::bsky::feed::post as post;
 use bsky_sdk::api::types::string;
@@ -30,6 +31,16 @@ pub enum BSkyBotAction {
 
 impl BSkyBot {
     pub async fn new(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
+        let mut datapath = env::var("DATADIR").unwrap_or("".to_string());
+        if !datapath.is_empty() && !datapath.ends_with('/') {
+            datapath.push('/');
+        }
+
+        let db_filename = env::var("BSKY_DB").unwrap_or_else(|_| format!("{}bsky-bot.db", datapath));
+        let mut db = Storage::new("bsky-bot.db");
+
+        println!("Using database: {}", db_filename);
+
         BSkyBot {
             config: {
                 BSkyBotConfig {
@@ -38,7 +49,7 @@ impl BSkyBot {
                 }
             },
             agent: bsky_bot::BskyAgent::builder().build().await.unwrap(),
-            db: Storage::new("bsky-bot.db"),
+            db: db,
             rx: rx,
         }
     }
