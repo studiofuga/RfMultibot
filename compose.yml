@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  rfeedbot:
+    image: rfeed-bot-image:latest
+    volumes:
+      - rfeed-bot-data:/data
+    environment:
+      BSKY_USER: your-user-here
+      BSKY_PASS: your-pass-here
+      DATADIR: /data
+
+volumes:
+  rfeed-bot-data:
