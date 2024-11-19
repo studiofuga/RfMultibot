@@ -8,6 +8,7 @@ mod filter;
 
 use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
+use log::{debug, error, info};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_schedule::{every, Job};
@@ -16,32 +17,35 @@ use crate::feed_parser::parse_feed;
 
 async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
     let bsky_bot = BSkyBot::new(rx, user, pass).await;
+
     bsky_bot
 }
 
 async fn do_poll(tx: Sender<BSkyBotAction>) {
-    println!("poll");
     let mut feed = Feed::new("https://ransomfeed.it/rss-complete.php".to_string());
     let feedxml = feed.get_feed().await.unwrap();
-    println!("Got a feed: {:?} bytes", feedxml.len());
 
-    parse_feed(feedxml, &mut feed).unwrap();
-    println!("feed parsed: {:?} entries", feed.feeds.len());
-
-    let post_res = tx.send(BSkyBotAction::NewFeeds {
-        feeds: feed.feeds.clone(),
-    }).await;
-
-    match post_res {
-        Ok(_) => { println!("Post create"); },
-        Err(err) => { println!("Post create failed: {}", err); }
+    match parse_feed(feedxml, &mut feed) {
+        Ok(_) => {
+            tx.send(BSkyBotAction::NewFeeds {
+                feeds: feed.feeds.clone(),
+            }).await.unwrap_or_else(|err| error!("Failed sending Feeds: {}", err));
+        }
+        Err( why ) => {
+            // todo: we could save the feed samewhere?
+            error!("Cannot parse feed: {}", why);
+        }
     }
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     let user = env::var("BSKY_USER").expect("Environment variable BSKY_USER not set");
     let pass = env::var("BSKY_PASS").expect("Environment variable BSKY_PASS not set");
+
+    info!("Bot starting");
 
     let (tx, rx) = mpsc::channel(32);
 
@@ -51,7 +55,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         bsky_bot.start().await;
     });
 
-    println!("Started bsky bot");
+    debug!("Started bsky bot");
 
     let poll = every(15).minute()
         .perform(|| async { do_poll(tx.clone()).await; });

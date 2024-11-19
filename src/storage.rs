@@ -1,3 +1,4 @@
+use log::error;
 use crate::feed::FeedEntry;
 use crate::set::Set;
 use rusqlite::{params, Connection};
@@ -50,7 +51,10 @@ impl Storage {
         self.handle.query_row("INSERT INTO posts (id, pid, title, link, published, country, attacker) \
             VALUES(?,?,?,?,?,?,?)",
             params![feed.id, feed.post_id, feed.title, feed.link, feed.published.timestamp(), feed.country, feed.group],
-                              |_x| {Ok(())});
+                              |_x| {Ok(())})
+            .unwrap_or_else(|e| {
+                error!("Failed to insert feed into database: {}", e);
+            });
     }
 }
 

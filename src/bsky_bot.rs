@@ -2,6 +2,7 @@ use std::env;
 use bsky_sdk::BskyAgent;
 use bsky_sdk::api::app::bsky::feed::post as post;
 use bsky_sdk::api::types::string;
+use log::{debug, error, info};
 use tokio::sync::mpsc::Receiver;
 use crate::bsky_bot;
 use crate::feed::FeedEntry;
@@ -40,7 +41,7 @@ impl BSkyBot {
         let db_filename = env::var("BSKY_DB").unwrap_or_else(|_| format!("{}bsky-bot.db", datapath));
         let db = Storage::new(&db_filename);
 
-        println!("Using database: {}", db_filename);
+        debug!("Using database: {}", db_filename);
 
         BSkyBot {
             config: {
@@ -59,7 +60,7 @@ impl BSkyBot {
         let logged_in = self.agent.login(&self.config.user, &self.config.pass).await;
         match logged_in {
             Ok(_) => {
-                println!("Logged in!");
+                info!("Logged in as {}", self.config.user);
             }
             Err(what) => {
                 panic!("Failed to log in: {:?}", what);
@@ -69,17 +70,17 @@ impl BSkyBot {
         while let Some(action) = self.rx.recv().await {
             match action {
                 BSkyBotAction::Post { title, text } => {
-                    self.post_action(title, text).await;
+                    _= self.post_action(title, text).await;
                 },
                 BSkyBotAction::NewFeeds { feeds } => {
-                    self.feeds_action(feeds).await;
+                    _= self.feeds_action(feeds).await;
                 }
             }
         }
     }
 
     async fn post_action(&mut self, title: String, text: String) -> Result<(), ()> {
-        println!("New post: {}", &title);
+        debug!("New post: {}", &title);
         let res = self.agent.create_record(post::RecordData {
             created_at: string::Datetime::now(),
             embed: None,
@@ -94,11 +95,12 @@ impl BSkyBot {
 
         match res {
             Ok(_) => {
-                println!("Post sent");
+                debug!("Post sent correctly");
                 Ok(())
             }
             Err(what) => {
-                panic!("Failed to create post: {:?}", what);
+                error!("Failed to create post: {:?}", what);
+                Err(())
             }
         }
     }
@@ -115,7 +117,11 @@ impl BSkyBot {
                 feed.link
             );
 
-            self.post_action(feed.title.clone(), text).await;
+            debug!("New Post for entry: id {} post_id {} group {}", feed.id, feed.post_id, feed.group);
+
+            self.post_action(feed.title.clone(), text).await.unwrap_or_else(|what| {
+                error!("Failed to post entry: {:?}", what);
+            });
         }
     }
 }
