@@ -64,7 +64,7 @@ pub fn filter_test() {
         },
     ];
 
-    let filter = DefaultFilter{};
+    let filter = DefaultFilter::new();
     let mut bag = Bag{ entries: Default::default() };
 
     let out = filter.filter(&mut bag, &entries);
@@ -88,4 +88,13 @@ pub fn filter_test() {
     assert_eq!(out_new[0].id, "550e8400-e29b-41d4-a716-446655440000");
     assert_eq!(out_new[1].id, "f47ac10b-58cc-4372-a567-0e02b2c3d479");
     assert_eq!(out_new[2].id, "123e4567-e89b-12d3-a456-42661417400");
+
+    let lim_filter = DefaultFilter::new_with_max(2);
+    let mut bag = Bag { entries: Default::default() };
+
+    let out_limited = lim_filter.filter(&mut bag, &entries);
+
+    assert_eq!(out_limited.len(), 2);
+    assert_eq!(out_limited[0].id, "550e8400-e29b-41d4-a716-446655440000");
+    assert_eq!(out_limited[1].id, "f47ac10b-58cc-4372-a567-0e02b2c3d479");
 }

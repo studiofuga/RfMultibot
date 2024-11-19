@@ -104,12 +104,10 @@ impl BSkyBot {
     }
 
     async fn feeds_action(&mut self, feeds: Vec<FeedEntry>) {
-        let filter = DefaultFilter{};
+        let filter = DefaultFilter::new_with_max(10);
         let to_post =filter.filter(&mut self.db, &feeds);
 
-        let postable : Vec<FeedEntry> = to_post.into_iter().rev().take(10).collect();
-        for feed in postable.iter() {
-            // Assuming that `feed.published` is a Unix timestamp (in seconds)
+        for feed in to_post.iter().rev() {
             let published = feed.published.format("%Y-%m-%d %H:%M:%S").to_string();
 
             let text = format!("ID: {}\n\u{0026A0} {}\n\u{01F977} {}\n\u{01F3AF} {}, {}\n\u{01F517} {}",

@@ -3,6 +3,7 @@ version: '3.8'
 services:
   rfeedbot:
     image: rfeed-bot-image:latest
+    restart: unless-stopped
     volumes:
       - rfeed-bot-data:/data
     environment:
