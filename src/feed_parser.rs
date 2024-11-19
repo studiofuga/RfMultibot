@@ -1,6 +1,6 @@
-use chrono::{DateTime, Utc};
-use feed_rs::parser::parse;
 use crate::feed::{Feed, FeedEntry};
+use chrono::Utc;
+use feed_rs::parser::parse;
 
 
 pub fn parse_feed(xml : String, feed: &mut Feed) -> Result<i32, String> {

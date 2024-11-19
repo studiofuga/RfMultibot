@@ -5,6 +5,7 @@ use bsky_sdk::api::types::string;
 use tokio::sync::mpsc::Receiver;
 use crate::bsky_bot;
 use crate::feed::FeedEntry;
+use crate::filter::{DefaultFilter, Filter};
 use crate::storage::Storage;
 
 struct BSkyBotConfig {
@@ -37,7 +38,7 @@ impl BSkyBot {
         }
 
         let db_filename = env::var("BSKY_DB").unwrap_or_else(|_| format!("{}bsky-bot.db", datapath));
-        let mut db = Storage::new(&db_filename);
+        let db = Storage::new(&db_filename);
 
         println!("Using database: {}", db_filename);
 
@@ -103,20 +104,8 @@ impl BSkyBot {
     }
 
     async fn feeds_action(&mut self, feeds: Vec<FeedEntry>) {
-        let mut to_post: Vec<FeedEntry> = vec![];
-        
-        for feedEntry in feeds.iter() {
-            if feedEntry.published < chrono::Utc::now() - chrono::Duration::days(30) {
-                continue;
-            }
-            if !self.db.has_post(&feedEntry.id) {
-                to_post.push(feedEntry.clone());
-                self.db.insert(&feedEntry);
-            }
-        }
-
-        // Sort the feeds to post by their published date, from oldest to newest
-        to_post.sort_by(|a, b| a.published.cmp(&b.published));
+        let filter = DefaultFilter{};
+        let to_post =filter.filter(&mut self.db, &feeds);
 
         let postable : Vec<FeedEntry> = to_post.into_iter().rev().take(10).collect();
         for feed in postable.iter() {

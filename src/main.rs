@@ -3,6 +3,8 @@ mod feed;
 mod feed_parser;
 mod tests;
 mod storage;
+mod set;
+mod filter;
 
 use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
@@ -13,12 +15,8 @@ use crate::feed::Feed;
 use crate::feed_parser::parse_feed;
 
 async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
-    let mut bsky_bot = BSkyBot::new(rx, user, pass).await;
+    let bsky_bot = BSkyBot::new(rx, user, pass).await;
     bsky_bot
-}
-
-struct Bots {
-    bsky_bot: BSkyBot,
 }
 
 async fn do_poll(tx: Sender<BSkyBotAction>) {
@@ -45,7 +43,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user = env::var("BSKY_USER").expect("Environment variable BSKY_USER not set");
     let pass = env::var("BSKY_PASS").expect("Environment variable BSKY_PASS not set");
 
-    let (tx, mut rx) = mpsc::channel(32);
+    let (tx, rx) = mpsc::channel(32);
 
     let mut bsky_bot = setup_bsky_bot(rx, user, pass).await;
 

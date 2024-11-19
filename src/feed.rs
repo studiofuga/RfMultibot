@@ -38,13 +38,13 @@ impl Feed {
 }
 
 impl FeedEntry {
-    pub fn new (title: String) -> Self {
-        FeedEntry{
-            id: "".to_string(),
+    pub fn new(id: &str) -> Self {
+        Self {
+            id: String::from(id),
             post_id: 0,
-            title,
+            title: String::from(id),
             link: "".to_string(),
-            published: Default::default(),
+            published: Utc::now(),
             country: "".to_string(),
             group: "".to_string(),
         }

@@ -1,7 +1,7 @@
-use bsky_sdk::api::app::bsky::feed::describe_feed_generator::Feed;
-use rusqlite::{params, Connection};
-use rusqlite_migration::{Migrations,M};
 use crate::feed::FeedEntry;
+use crate::set::Set;
+use rusqlite::{params, Connection};
+use rusqlite_migration::{Migrations, M};
 
 pub struct Storage {
     handle: Connection,
@@ -38,7 +38,7 @@ impl Storage {
         storage
     }
 
-    pub fn inMemory() -> Storage {
+    pub fn in_memory() -> Storage {
         Storage::new(":memory:")
     }
 
@@ -50,7 +50,16 @@ impl Storage {
         self.handle.query_row("INSERT INTO posts (id, pid, title, link, published, country, attacker) \
             VALUES(?,?,?,?,?,?,?)",
             params![feed.id, feed.post_id, feed.title, feed.link, feed.published.timestamp(), feed.country, feed.group],
-                              |x| {Ok(())});
+                              |_x| {Ok(())});
     }
 }
 
+impl Set for Storage {
+    fn has(&self, id: &str) -> bool {
+        self.has_post(id)
+    }
+
+    fn insert(&mut self, entry: &FeedEntry) {
+        self.insert(entry);
+    }
+}

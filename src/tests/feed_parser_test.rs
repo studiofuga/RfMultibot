@@ -1,5 +1,5 @@
-use chrono::DateTime;
 #[cfg(test)]
+use chrono::DateTime;
 
 use crate::feed::Feed;
 use crate::feed::FeedEntry;
