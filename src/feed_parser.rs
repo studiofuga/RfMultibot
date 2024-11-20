@@ -1,33 +1,64 @@
 use crate::feed::{Feed, FeedEntry};
-use chrono::Utc;
-use feed_rs::parser::parse;
+use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use log::error;
+use rss::{Channel, Item};
 
 
 pub fn parse_feed(xml : String, feed: &mut Feed) -> Result<i32, String> {
-    let rss = parse(xml.as_bytes()).unwrap();
+    let channel = Channel::read_from(xml.as_bytes()).unwrap();
 
-    for item in &rss.entries {
-        let (post_id, link) = if item.links.len() > 0 {
-            let url = url::Url::parse(&item.links[0].href).unwrap();
-            let post_id = url.query_pairs()
-                .find(|(key, _)| key == "id_post")
-                .map(|(_, value)| value.parse::<i32>().unwrap_or(0))
-                .unwrap_or(0);
-            (post_id, url.as_str().to_string())
-        } else {
-            (0, "".to_owned())
+    for item in &channel.items {
+
+        let (post_id, link) = match &item.link {
+            None => {
+                (0, "".to_owned())
+            }
+            Some(link) => {
+                let url = url::Url::parse(&link).unwrap();
+                let post_id = url.query_pairs()
+                    .find(|(key, _)| key == "id_post")
+                    .map(|(_, value)| value.parse::<i32>().unwrap_or(0))
+                    .unwrap_or(0);
+                    (post_id, url.to_string())
+                }
         };
 
+        let published = match &item.pub_date {
+            None => { Utc::now() }
+            Some(tm) => {
+                match NaiveDateTime::parse_from_str(tm, "%a, %d %b %Y %H:%M:%S %Z") {
+                    Ok(dt) => DateTime::from_naive_utc_and_offset(dt, Utc),
+                    Err( x ) => {
+                        error!("Cannot parse {}: {}", tm, x);
+                        Utc::now() },
+                }
+            }
+        };
+
+        let dc = item.extensions.get_key_value("dc");
+        let ext = dc.and_then(|dc| dc.1.get("country"));
+        let country = ext.and_then(|ext| { if !ext.is_empty() { ext[0].value.clone() } else {None} }).unwrap_or(String::new()) ;
+
+        let guid = match &item.guid {
+            None => "none".to_string(),
+            Some(g) => g.value.clone(),
+        };
+
+        let title = match &item.title {
+            None => { "none".to_string() },
+            Some(g) => {g .clone() }
+        };
+        
         feed.feeds.push(FeedEntry {
-            id: item.id.to_string(),
+            id: guid,
             post_id,
-            title: item.title.as_ref().unwrap().content.clone(),
+            title: title,
             link,
-            published: item.published.unwrap_or(Utc::now()),
-            country: "none".to_string(),
-            group: if item.categories.len() > 0 { item.categories[0].term.clone() } else { "undefined".to_owned() },
+            published,
+            country: country,
+            group: if item.categories.len() > 0 { item.categories[0].name.clone() } else { "undefined".to_owned() },
         });
     }
 
-    Ok(rss.entries.len() as i32)
+    Ok(channel.items.len() as i32)
 }
