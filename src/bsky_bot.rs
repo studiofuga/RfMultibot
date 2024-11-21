@@ -122,6 +122,9 @@ impl BSkyBot {
 
             debug!("New Post for entry: id {} post_id {} group {}", feed.id, feed.post_id, feed.group);
 
+            self.post_action(feed.title.clone(), text).await.unwrap_or_else(|what| {
+                error!("Failed to post entry: {:?}", what);
+            });
         }
     }
 }
