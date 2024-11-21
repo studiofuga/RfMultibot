@@ -1,7 +1,7 @@
 use crate::feed::{Feed, FeedEntry};
-use chrono::{DateTime, NaiveDate, NaiveDateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use log::error;
-use rss::{Channel, Item};
+use rss::{Channel};
 
 
 pub fn parse_feed(xml : String, feed: &mut Feed) -> Result<i32, String> {

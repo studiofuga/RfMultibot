@@ -19,6 +19,8 @@ pub struct BSkyBot {
     agent: BskyAgent,
     db: Storage,
     rx: Receiver<BSkyBotAction>,
+
+    pub max_posts_count: usize,
 }
 
 pub enum BSkyBotAction {
@@ -53,6 +55,7 @@ impl BSkyBot {
             agent: bsky_bot::BskyAgent::builder().build().await.unwrap(),
             db: db,
             rx: rx,
+            max_posts_count: 100,
         }
     }
 

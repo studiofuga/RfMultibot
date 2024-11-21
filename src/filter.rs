@@ -36,10 +36,6 @@ impl Filter for DefaultFilter {
         let mut to_post: Vec<FeedEntry> = vec![];
 
         for feed_entry in posts.iter() {
-            if feed_entry.published < chrono::Utc::now() - chrono::Duration::days(30) {
-                continue;
-            }
-
             if !set.has(&feed_entry.id) {
                 to_post.push(feed_entry.clone());
                 set.insert(&feed_entry);

@@ -9,7 +9,7 @@ pub struct Storage {
 }
 
 impl Storage {
-    pub fn new(file :&str) -> Storage {
+    pub fn new(file: &str) -> Storage {
         let mut storage = Storage {
             handle: rusqlite::Connection::open(file).unwrap(),
         };
@@ -48,13 +48,9 @@ impl Storage {
     }
 
     pub fn insert(&mut self, feed: &FeedEntry) {
-        self.handle.query_row("INSERT INTO posts (id, pid, title, link, published, country, attacker) \
-            VALUES(?,?,?,?,?,?,?)",
-            params![feed.id, feed.post_id, feed.title, feed.link, feed.published.timestamp(), feed.country, feed.group],
-                              |_x| {Ok(())})
-            .unwrap_or_else(|e| {
-                error!("Failed to insert feed into database: {}", e);
-            });
+        _= self.handle.execute("INSERT INTO posts (id, pid, title, link, published, country, attacker) VALUES(?,?,?,?,?,?,?)",
+                            params![feed.id, feed.post_id, feed.title, feed.link, feed.published.timestamp(), feed.country, feed.group])
+            .map_err(|err|{ error!("Error while inserting feed: {:?}: {}", feed.id, err.to_string()); } );
     }
 }
 

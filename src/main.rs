@@ -8,7 +8,7 @@ mod filter;
 
 use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_schedule::{every, Job};
@@ -51,6 +51,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut bsky_bot = setup_bsky_bot(rx, user, pass).await;
 
+
+    if let Ok(max_posts) = env::var("BSKY_MAX_POST") {
+        if let Ok(max_posts_count) = max_posts.parse::<usize>() {
+            bsky_bot.max_posts_count = max_posts_count;
+        } else {
+            warn!("Invalid BSKY_MAX_POST value ({:?}). It should be a valid usize.", env::var("BSKY_MAX_POST"));
+        }
+    }
+    
     tokio::spawn(async move {
         bsky_bot.start().await;
     });
