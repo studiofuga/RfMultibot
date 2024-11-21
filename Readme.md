@@ -26,6 +26,8 @@ docker image. It must be writeable.
 - `BSKY_DB` is the name of the bsky database, if you want to change the default name and location. By default,
 the database will be named `bsky-bot.db` and will be located in `DATADIR` if present. If `BSKY_DB` is specified,
 `DATADIR` will not be prepended.
+- `BSKY_MAX_POST`: Set the maximum number of entries to post, to avoid flooding the server. This is useful when
+starting the bot with an empty db.
 
 ## Building the docker image
 
