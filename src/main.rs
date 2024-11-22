@@ -51,6 +51,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut bsky_bot = setup_bsky_bot(rx, user, pass).await;
 
+    if let Ok(_) = env::var("BSKY_DISABLE_POST") {
+        bsky_bot.post_disabled = true;
+        warn!("BSky posting disabled");
+    }
 
     if let Ok(max_posts) = env::var("BSKY_MAX_POST") {
         if let Ok(max_posts_count) = max_posts.parse::<usize>() {
