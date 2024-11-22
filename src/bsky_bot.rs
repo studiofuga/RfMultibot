@@ -4,6 +4,7 @@ use crate::filter::{DefaultFilter, Filter};
 use crate::storage::Storage;
 use bsky_sdk::api::app::bsky::feed::post;
 use bsky_sdk::api::types::string;
+use bsky_sdk::rich_text::RichText;
 use bsky_sdk::BskyAgent;
 use log::{debug, error, info};
 use std::env;
@@ -121,16 +122,46 @@ impl BSkyBot {
                 feed.post_id, published, feed.group, feed.title, feed.country, feed.link
             );
 
-            debug!(
-                "New Post for entry: id {} post_id {} group {}",
-                feed.id, feed.post_id, feed.group
-            );
+            let rich_text = RichText::new_with_detect_facets(&text).await;
 
-            self.post_action(feed.title.clone(), text)
-                .await
-                .unwrap_or_else(|what| {
-                    error!("Failed to post entry: {:?}", what);
-                });
+            let facets = if let Ok(rt) = rich_text {
+                rt.facets
+            } else {
+                None
+            };
+
+            if !self.post_disabled {
+                debug!(
+                    "New Post for entry: id {} post_id {} group {}",
+                    feed.id, feed.post_id, feed.group
+                );
+
+                let res = self
+                    .agent
+                    .create_record(post::RecordData {
+                        created_at: string::Datetime::now(),
+                        embed: None,
+                        entities: None,
+                        facets: facets,
+                        labels: None,
+                        langs: None,
+                        reply: None,
+                        tags: None,
+                        text: text,
+                    })
+                    .await;
+
+                match res {
+                    Ok(_) => {
+                        debug!("Post sent correctly");
+                    }
+                    Err(what) => {
+                        error!("Failed to create post: {}", what);
+                    }
+                }
+            } else {
+                 debug!("Posting message: text: {}", text);
+            }
         }
     }
 }
