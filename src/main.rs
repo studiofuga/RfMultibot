@@ -23,7 +23,13 @@ async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String)
 
 async fn do_poll(tx: Sender<BSkyBotAction>) {
     let mut feed = Feed::new("https://ransomfeed.it/rss-complete-Tbot.php".to_string());
-    let feedxml = feed.get_feed().await.unwrap();
+    let feedxml = match feed.get_feed().await {
+        Ok(feed_data) => feed_data,
+        Err(err) => {
+            error!("Failed to get feed: {}", err);
+            return;
+        }
+    };
 
     match parse_feed(feedxml, &mut feed) {
         Ok(_) => {
