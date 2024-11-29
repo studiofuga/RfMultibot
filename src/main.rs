@@ -5,6 +5,7 @@ mod tests;
 mod storage;
 mod set;
 mod filter;
+mod tg_bot;
 
 use crate::bsky_bot::{BSkyBot, BSkyBotAction};
 use std::env;
@@ -14,6 +15,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio_schedule::{every, Job};
 use crate::feed::Feed;
 use crate::feed_parser::parse_feed;
+use crate::tg_bot::{telegram_bot, Action};
 
 async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String) -> BSkyBot {
     let bsky_bot = BSkyBot::new(rx, user, pass).await;
@@ -21,7 +23,13 @@ async fn setup_bsky_bot(rx: Receiver<BSkyBotAction>, user: String, pass: String)
     bsky_bot
 }
 
-async fn do_poll(tx: Sender<BSkyBotAction>) {
+#[derive(Clone)]
+struct bot_channels {
+    tg: Sender<Action>,
+    bsky: Sender<BSkyBotAction>,
+}
+
+async fn do_poll(channels: bot_channels) {
     let mut feed = Feed::new("https://ransomfeed.it/rss-complete-Tbot.php".to_string());
     let feedxml = match feed.get_feed().await {
         Ok(feed_data) => feed_data,
@@ -33,7 +41,7 @@ async fn do_poll(tx: Sender<BSkyBotAction>) {
 
     match parse_feed(feedxml, &mut feed) {
         Ok(_) => {
-            tx.send(BSkyBotAction::NewFeeds {
+            channels.bsky.send(BSkyBotAction::NewFeeds {
                 feeds: feed.feeds.clone(),
             }).await.unwrap_or_else(|err| error!("Failed sending Feeds: {}", err));
         }
@@ -50,6 +58,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let user = env::var("BSKY_USER").expect("Environment variable BSKY_USER not set");
     let pass = env::var("BSKY_PASS").expect("Environment variable BSKY_PASS not set");
+
+    let tgram_key = env::var("TG_BOT_KEY").expect("Environment variable TG_BOT_KEY not set");
 
     info!("Bot starting");
 
@@ -76,9 +86,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("Started bsky bot");
 
-    do_poll(tx.clone()).await;
+    let tgbot = telegram_bot::build(&tgram_key);
+    let tgtx = tgbot.channel();
+
+    let botchannels = bot_channels {
+        tg: tgtx,
+        bsky: tx,
+    };
+
+    do_poll(botchannels.clone()).await;
     let poll = every(15).minute()
-        .perform(|| async { do_poll(tx.clone()).await; });
+        .perform(|| async { do_poll(botchannels.clone()).await; });
     poll.await;
 
     Ok(())
