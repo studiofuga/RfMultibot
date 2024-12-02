@@ -5,6 +5,7 @@ This rust bot runs multiple social network bots posting new entries from RansomF
 Currently, the following social networks are supported:
 
 - bsky
+- Telegram
 
 More to come.
 
@@ -17,7 +18,13 @@ Some configuration parameter can be defined in a special config file.
 
 The following environment variables are mandatory:
 
-- `BSKY_USER` and `BSKY_PASS`: the username (email address) of the account on bsky to which the bot will connect
+#### Blue Sky bot configuration
+
+- `BSKY_USER` and `BSKY_PASS`: the username (email address) and app key of the account on bsky to which the bot will connect
+
+#### Telegram bot configuration
+
+- `TG_TOKEN`: the Telegram token used to access the bot
 
 ### Optional (but useful) env variables
 

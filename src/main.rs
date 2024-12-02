@@ -43,7 +43,10 @@ async fn do_poll(channels: bot_channels) {
         Ok(_) => {
             channels.bsky.send(BSkyBotAction::NewFeeds {
                 feeds: feed.feeds.clone(),
-            }).await.unwrap_or_else(|err| error!("Failed sending Feeds: {}", err));
+            }).await.unwrap_or_else(|err| error!("Failed sending Feeds to BSky Bot: {}", err));
+            channels.tg.send(Action::NewFeeds {
+                feeds: feed.feeds.clone(),
+            }).await.unwrap_or_else(|err| error!("Failed sending Feeds to Telegram Bot: {}", err));
         }
         Err( why ) => {
             // todo: we could save the feed samewhere?
@@ -59,7 +62,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user = env::var("BSKY_USER").expect("Environment variable BSKY_USER not set");
     let pass = env::var("BSKY_PASS").expect("Environment variable BSKY_PASS not set");
 
-    let tgram_key = env::var("TG_BOT_KEY").expect("Environment variable TG_BOT_KEY not set");
+    let tgram_key = env::var("TG_TOKEN").expect("Environment variable TG_TOKEN not set");
 
     info!("Bot starting");
 
@@ -86,8 +89,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("Started bsky bot");
 
-    let tgbot = telegram_bot::build(&tgram_key);
+    let mut tgbot = telegram_bot::build(&tgram_key).await;
     let tgtx = tgbot.channel();
+
+    tokio::spawn(async move {
+        tgbot.start().await;
+    });
 
     let botchannels = bot_channels {
         tg: tgtx,
