@@ -24,22 +24,24 @@ impl Set for Bag {
 
 #[test]
 pub fn filter_test() {
+
+    // actually: 0 > 2 > 3 > 1
     let entries = vec![
         FeedEntry {
             id: String::from("550e8400-e29b-41d4-a716-446655440000"),
             post_id: 1234,
-            title: String::from("Entry 4"),
+            title: String::from("Newest"),
             link: String::from("https://example.com/first"),
-            published: Utc.with_ymd_and_hms(2024, 11, 10,8, 55, 33).unwrap(),
+            published: Utc.timestamp_millis_opt(1731225311).unwrap(),
             country: String::from(""),
             group: String::from("unknown"),
         },
         FeedEntry {
             id: String::from("123e4567-e89b-12d3-a456-42661417400"),
             post_id: 1235,
-            title: String::from("Entry 1"),
+            title: String::from("Oldest"),
             link: String::from("https://example.com/second"),
-            published: Utc.with_ymd_and_hms(2024, 11, 08,8, 55, 33).unwrap(),
+            published: Utc.timestamp_millis_opt(1731052511).unwrap(),
             country: String::from(""),
             group: String::from("unknown"),
 
@@ -47,18 +49,18 @@ pub fn filter_test() {
         FeedEntry {
             id: String::from("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
             post_id: 1236,
-            title: String::from("Entry 3"),
+            title: String::from("Second Newest"),
             link: String::from("https://example.com/third"),
-            published: Utc.with_ymd_and_hms(2024, 11, 10,5, 55, 33).unwrap(),
+            published: Utc.timestamp_millis_opt(1731211200).unwrap(),
             country: String::from(""),
             group: String::from("unknown"),
         },
         FeedEntry {
             id: String::from("3d594650-efef-11ea-adc1-0242ac120002"),
             post_id: 1237,
-            title: String::from("Entry 2"),
+            title: String::from("Thirs newest"),
             link: String::from("https://example.com/fourth"),
-            published: Utc.with_ymd_and_hms(2024, 11, 10,0, 55, 33).unwrap(),
+            published: Utc.timestamp_millis_opt(1731193200).unwrap(),
             country: String::from(""),
             group: String::from("attacker"),
         },

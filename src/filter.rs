@@ -42,7 +42,7 @@ impl Filter for DefaultFilter {
             }
         }
 
-        // Sort the feeds to post by their published date, from oldest to newest
+        // Sort the feeds to post by their published date, from newest to oldest
         to_post.sort_by(|a, b| b.published.cmp(&a.published));
 
         if let Some(max) = self.max {
