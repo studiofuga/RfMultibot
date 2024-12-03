@@ -28,7 +28,7 @@ enum Command {
 }
 
 impl telegram_bot {
-    pub async fn build(key: &str) -> telegram_bot {
+    pub async fn build(key: &str, channel_id: i64) -> telegram_bot {
         let (tx, rx) = mpsc::channel(32);
         let bot = Bot::new(key.to_string());
 
@@ -47,7 +47,7 @@ impl telegram_bot {
             .await;
 
         telegram_bot { bot,
-            channel_id: -1002073524107,
+            channel_id: channel_id,
             tx, rx }
     }
 

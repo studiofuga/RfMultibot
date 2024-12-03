@@ -63,6 +63,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let pass = env::var("BSKY_PASS").expect("Environment variable BSKY_PASS not set");
 
     let tgram_key = env::var("TG_TOKEN").expect("Environment variable TG_TOKEN not set");
+    let tgram_channel = env::var("TG_CHANNEL").expect("Environment variable TG_CHANNEL not set")
+        .parse::<i64>().expect("TG_CHANNEL should be a number");
 
     info!("Bot starting");
 
@@ -89,7 +91,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     debug!("Started bsky bot");
 
-    let mut tgbot = telegram_bot::build(&tgram_key).await;
+    let mut tgbot = telegram_bot::build(&tgram_key,tgram_channel).await;
     let tgtx = tgbot.channel();
 
     tokio::spawn(async move {

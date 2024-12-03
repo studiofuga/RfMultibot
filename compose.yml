@@ -7,8 +7,10 @@ services:
     volumes:
       - rfeed-bot-data:/data
     environment:
-      BSKY_USER: your-user-here
-      BSKY_PASS: your-pass-here
+      BSKY_USER: your-bsky-user
+      BSKY_PASS: your-bsky-app-pass
+      TG_TOKEN: your-telegra-token
+      TG_CHANNEL: telegram-id-as-number
       DATADIR: /data
 
 volumes:
