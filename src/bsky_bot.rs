@@ -153,14 +153,14 @@ impl BSkyBot {
 
                 match res {
                     Ok(_) => {
-                        debug!("Post sent correctly");
+                        debug!("Post sent correctly on bsky");
                     }
                     Err(what) => {
-                        error!("Failed to create post: {}", what);
+                        error!("Failed to create post on bsky: {}", what);
                     }
                 }
             } else {
-                 debug!("Posting message: text: {}", text);
+                 debug!("Posting message on bsky: text: {}", text);
             }
         }
     }
