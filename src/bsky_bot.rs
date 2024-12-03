@@ -153,6 +153,7 @@ impl BSkyBot {
 
                 match res {
                     Ok(_) => {
+                        filter.commit(&mut self.db, &vec![feed.clone()]);
                         debug!("Post sent correctly on bsky");
                     }
                     Err(what) => {

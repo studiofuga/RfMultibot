@@ -16,6 +16,8 @@ pub trait Filter {
     ///
     /// A vector of filtered `FeedEntry` not present in the set, ordered from newest to oldest.
     fn filter(&self, set: &mut dyn Set, posts: &Vec<FeedEntry>) -> Vec<FeedEntry>;
+
+    fn commit(&self, set: &mut dyn Set, posts: &Vec<FeedEntry>) -> Result<(), ()>;
 }
 
 pub struct DefaultFilter {
@@ -38,7 +40,6 @@ impl Filter for DefaultFilter {
         for feed_entry in posts.iter() {
             if !set.has(&feed_entry.id) {
                 to_post.push(feed_entry.clone());
-                set.insert(&feed_entry);
             }
         }
 
@@ -52,5 +53,11 @@ impl Filter for DefaultFilter {
         }
         
         to_post
+    }
+    fn commit(&self, set: &mut dyn Set, posts: &Vec<FeedEntry>) -> Result<(), ()> {
+        for feed_entry in posts.iter() {
+            set.insert(feed_entry);
+        }
+        Ok(())
     }
 }
