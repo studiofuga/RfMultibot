@@ -77,8 +77,6 @@ pub fn filter_test() {
     assert_eq!(out[2].id, "3d594650-efef-11ea-adc1-0242ac120002");
     assert_eq!(out[3].id, "123e4567-e89b-12d3-a456-42661417400");
 
-    filter.commit(&mut bag, &entries);
-
     let out_empty = filter.filter(&mut bag, &entries);
     
     assert_eq!(out_empty.len(), 0);

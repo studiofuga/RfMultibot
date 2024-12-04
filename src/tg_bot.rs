@@ -111,7 +111,6 @@ impl telegram_bot {
                 let res = self.bot.send_message(ChatId(self.channel_id), text).await;
                 match res {
                     Ok(_) => {
-                        filter.commit(&mut self.db, &vec![feed.clone()]);
                         debug!("Post sent correctly on telegram");
                     }
                     Err(what) => {
