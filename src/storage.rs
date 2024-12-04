@@ -2,7 +2,10 @@ use log::error;
 use crate::feed::FeedEntry;
 use crate::set::Set;
 use rusqlite::{params, Connection};
-use rusqlite_migration::{Migrations, M};
+use rusqlite_migration::{Migrations};
+use include_dir::{include_dir, Dir};
+
+static MIGRATIONS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/migrations");
 
 pub struct Storage {
     handle: Connection,
@@ -14,23 +17,7 @@ impl Storage {
             handle: rusqlite::Connection::open(file).unwrap(),
         };
 
-        let migrations = Migrations::new(vec![
-            M::up(r##"
-            create table posts (
-                    id        TEXT                          not null,
-                    pid       integer,
-                    title     TEXT,
-                    link      TEXT,
-                    published integer default 'unixepoch()' not null,
-                    country   TEXT,
-                    attacker  TEXT    default unknown       not null
-                );
-            create unique index id_index on posts (id);
-            "##),
-
-            // In the future, add more migrations here:
-            //M::up("ALTER TABLE friend ADD COLUMN email TEXT;"),
-        ]);
+        let migrations = Migrations::from_directory(&MIGRATIONS_DIR).unwrap();
 
         // Apply some PRAGMA, often better to do it outside of migrations
 
