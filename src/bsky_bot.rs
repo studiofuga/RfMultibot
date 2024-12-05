@@ -153,9 +153,11 @@ impl BSkyBot {
 
                 match res {
                     Ok(_) => {
+                        self.db.set_published(&feed.id);
                         debug!("Post sent correctly on bsky");
                     }
                     Err(what) => {
+                        self.db.set_to_resend(&feed.id);
                         error!("Failed to create post on bsky: {}", what);
                     }
                 }

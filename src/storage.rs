@@ -31,13 +31,35 @@ impl Storage {
     }
 
     pub fn has_post(&self, guid: &str) -> bool {
-        self.handle.query_row("SELECT 1 FROM posts WHERE id = ?", params![guid], |_| Ok(true)).is_ok()
+        let resend = self.handle.query_row::<i64,_,_>("SELECT resend FROM posts WHERE id = ?", params![guid], |r| r.get(0));
+
+        match resend {
+            Ok(r) => { r == 0}
+            Err(_) => { false }
+        }
     }
 
     pub fn insert(&mut self, feed: &FeedEntry) {
         _= self.handle.execute("INSERT INTO posts (id, pid, title, link, published, country, attacker) VALUES(?,?,?,?,?,?,?)",
                             params![feed.id, feed.post_id, feed.title, feed.link, feed.published.timestamp(), feed.country, feed.group])
             .map_err(|err|{ error!("Error while inserting feed: {:?}: {}", feed.id, err.to_string()); } );
+    }
+
+    fn set_resend_flag(&mut self, guid: &str, flag: bool) {
+        _ = self.handle.execute("UPDATE posts SET resend = ? WHERE id = ?", params![guid, flag as i64])
+            .map_err(|err|{ error!("Error while updating posts : {:?}", err ) } );
+    }
+
+    pub fn set_to_resend(&mut self, giud: &str) {
+        self.set_resend_flag(giud, true);
+    }
+
+    pub fn set_published(&mut self, guid: &str) {
+        self.set_resend_flag(guid, false);
+    }
+
+    pub fn remove(&mut self, guid: &str) {
+        _ = self.handle.execute("DELETE FROM posts WHERE id = ?", params![guid]);
     }
 }
 

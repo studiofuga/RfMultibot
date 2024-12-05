@@ -111,9 +111,11 @@ impl telegram_bot {
                 let res = self.bot.send_message(ChatId(self.channel_id), text).await;
                 match res {
                     Ok(_) => {
+                        self.db.set_published(&feed.id);
                         debug!("Post sent correctly on telegram");
                     }
                     Err(what) => {
+                        self.db.set_to_resend(&feed.id);
                         error!("Failed to send message on telegram: {}", what);
                     }
                 }
