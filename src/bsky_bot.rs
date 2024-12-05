@@ -1,7 +1,7 @@
 use crate::bsky_bot;
 use crate::feed::FeedEntry;
 use crate::filter::{DefaultFilter, Filter};
-use crate::storage::Storage;
+use crate::storage::SqliteStorage;
 use bsky_sdk::api::app::bsky::feed::post;
 use bsky_sdk::api::types::string;
 use bsky_sdk::rich_text::RichText;
@@ -18,7 +18,7 @@ struct BSkyBotConfig {
 pub struct BSkyBot {
     config: BSkyBotConfig,
     agent: BskyAgent,
-    db: Storage,
+    db: SqliteStorage,
     rx: Receiver<BSkyBotAction>,
 
     pub max_posts_count: usize,
@@ -39,7 +39,7 @@ impl BSkyBot {
 
         let db_filename =
             env::var("BSKY_DB").unwrap_or_else(|_| format!("{}bsky-bot.db", datapath));
-        let db = Storage::new(&db_filename);
+        let db = SqliteStorage::new(&db_filename);
 
         debug!("Using database: {}", db_filename);
 
@@ -162,7 +162,8 @@ impl BSkyBot {
                     }
                 }
             } else {
-                 debug!("Posting message on bsky: text: {}", text);
+                debug!("Posting message on bsky: text: {}", text);
+                self.db.set_published(&feed.id);
             }
         }
     }

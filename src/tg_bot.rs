@@ -5,7 +5,7 @@ use tokio::sync::mpsc;
 use tokio::sync::mpsc::{Receiver, Sender};
 
 use crate::filter::{DefaultFilter, Filter};
-use crate::storage::Storage;
+use crate::storage::SqliteStorage;
 use teloxide::{
     dispatching::{dialogue, dialogue::InMemStorage, UpdateHandler},
     prelude::*,
@@ -15,7 +15,7 @@ use teloxide::{
 pub struct telegram_bot {
     bot: Bot,
     channel_id: i64,
-    db: Storage,
+    db: SqliteStorage,
     tx: Sender<Action>,
     rx: Receiver<Action>,
 
@@ -62,7 +62,7 @@ impl telegram_bot {
 
         let db_filename =
             env::var("TG_DB").unwrap_or_else(|_| format!("{}telegram-bot.db", datapath));
-        let db = Storage::new(&db_filename);
+        let db = SqliteStorage::new(&db_filename);
 
         telegram_bot {
             bot,
@@ -121,6 +121,7 @@ impl telegram_bot {
                 }
             } else {
                 debug!("Posting message on telegram: text: {}", text);
+                self.db.set_published(&feed.id);
             }
         }
     }

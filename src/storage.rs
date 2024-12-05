@@ -1,19 +1,21 @@
 use log::error;
 use crate::feed::FeedEntry;
-use crate::set::Set;
+use crate::set::{FeedStorage, FeedStorageState};
 use rusqlite::{params, Connection};
 use rusqlite_migration::{Migrations};
 use include_dir::{include_dir, Dir};
+use teloxide::dispatching::dialogue::Storage;
+use crate::set::FeedStorageState::{Missing, Posted, Resend};
 
 static MIGRATIONS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/migrations");
 
-pub struct Storage {
+pub struct SqliteStorage {
     handle: Connection,
 }
 
-impl Storage {
-    pub fn new(file: &str) -> Storage {
-        let mut storage = Storage {
+impl SqliteStorage {
+    pub fn new(file: &str) -> SqliteStorage {
+        let mut storage = SqliteStorage {
             handle: rusqlite::Connection::open(file).unwrap(),
         };
 
@@ -26,16 +28,16 @@ impl Storage {
         storage
     }
 
-    pub fn in_memory() -> Storage {
-        Storage::new(":memory:")
+    pub fn in_memory() -> SqliteStorage {
+        SqliteStorage::new(":memory:")
     }
 
-    pub fn has_post(&self, guid: &str) -> bool {
+    pub fn has_post(&self, guid: &str) -> FeedStorageState {
         let resend = self.handle.query_row::<i64,_,_>("SELECT resend FROM posts WHERE id = ?", params![guid], |r| r.get(0));
 
         match resend {
-            Ok(r) => { r == 0}
-            Err(_) => { false }
+            Ok(r) => { if r == 0 { Posted } else { Resend } }
+            Err(_) => { Missing }
         }
     }
 
@@ -46,7 +48,7 @@ impl Storage {
     }
 
     fn set_resend_flag(&mut self, guid: &str, flag: bool) {
-        _ = self.handle.execute("UPDATE posts SET resend = ? WHERE id = ?", params![guid, flag as i64])
+        _ = self.handle.execute("UPDATE posts SET resend = ? WHERE id = ?", params![{ if flag { 1 } else { 0 }},guid])
             .map_err(|err|{ error!("Error while updating posts : {:?}", err ) } );
     }
 
@@ -63,12 +65,23 @@ impl Storage {
     }
 }
 
-impl Set for Storage {
-    fn has(&self, id: &str) -> bool {
+impl FeedStorage for SqliteStorage {
+    fn has(&self, id: &str) -> FeedStorageState {
         self.has_post(id)
     }
 
-    fn insert(&mut self, entry: &FeedEntry) {
+    fn insert(&mut self, entry: &FeedEntry) -> Result<(),()> {
         self.insert(entry);
+        Ok(())
+    }
+
+    fn set_resend(&mut self, id: &str) -> Result<(), ()> {
+        self.set_to_resend(id);
+        Ok(())
+    }
+
+    fn set_posted(&mut self, id: &str) -> Result<(), ()> {
+        self.set_published(id);
+        Ok(())
     }
 }

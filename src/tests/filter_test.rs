@@ -2,26 +2,44 @@
 use crate::feed::FeedEntry;
 use crate::filter::DefaultFilter;
 use crate::filter::Filter;
-use crate::set::Set;
+use crate::set::{FeedStorage, FeedStorageState};
 
 use chrono::{TimeZone, Utc};
 use std::collections::HashMap;
+use crate::set::FeedStorageState::{Missing, Posted, Resend};
 
 struct Bag {
     pub entries: HashMap<String, bool>,
 }
 
-impl Set for Bag {
-    fn has(&self, id: &str) -> bool {
+impl FeedStorage for Bag {
+    fn has(&self, id: &str) -> FeedStorageState {
         let e = self.entries.get(id);
         match e {
-            None => { false }
-            Some(x) => !*x
+            None => Missing,
+            Some(resend) => {
+                if *resend {
+                    FeedStorageState::Resend
+                } else {
+                    FeedStorageState::Posted
+                }
+            }
         }
     }
 
-    fn insert(&mut self, entry: &FeedEntry) {
+    fn insert(&mut self, entry: &FeedEntry) -> Result<(), ()> {
         self.entries.insert(entry.id.clone(), false);
+        Ok(())
+    }
+
+    fn set_resend(&mut self, id: &str) -> Result<(), ()> {
+        self.set_resend(id, true);
+        Ok(())
+    }
+
+    fn set_posted(&mut self, id: &str) -> Result<(), ()> {
+        self.set_resend(id, false);
+        Ok(())
     }
 }
 
@@ -80,6 +98,8 @@ pub fn filter_test() {
         entries: Default::default(),
     };
 
+    assert_eq!(bag.has("3d594650-efef-11ea-adc1-0242ac120002"), Missing);
+
     let out = filter.filter(&mut bag, &entries);
 
     assert_eq!(out.len(), 4);
@@ -105,12 +125,12 @@ pub fn filter_test() {
     assert_eq!(out_new[2].id, "123e4567-e89b-12d3-a456-42661417400");
 
     bag.set_resend("3d594650-efef-11ea-adc1-0242ac120002", true);
-    assert_eq!(bag.has("3d594650-efef-11ea-adc1-0242ac120002"), false);
+    assert_eq!(bag.has("3d594650-efef-11ea-adc1-0242ac120002"), Resend);
     let out_new = filter.filter(&mut bag, &entries);
     assert_eq!(out_new.len(), 1);
 
     bag.set_resend("3d594650-efef-11ea-adc1-0242ac120002", false);
-    assert_eq!(bag.has("3d594650-efef-11ea-adc1-0242ac120002"), true);
+    assert_eq!(bag.has("3d594650-efef-11ea-adc1-0242ac120002"), Posted);
     let out_new = filter.filter(&mut bag, &entries);
     assert_eq!(out_new.len(), 0);
 

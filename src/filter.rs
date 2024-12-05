@@ -1,5 +1,5 @@
 use crate::feed::FeedEntry;
-use crate::set::Set;
+use crate::set::{FeedStorage, FeedStorageState};
 
 pub trait Filter {
     /// Filters the given posts based on whether they are present in the set and additional criteria.
@@ -15,7 +15,7 @@ pub trait Filter {
     /// # Returns
     ///
     /// A vector of filtered `FeedEntry` not present in the set, ordered from newest to oldest.
-    fn filter(&self, set: &mut dyn Set, posts: &Vec<FeedEntry>) -> Vec<FeedEntry>;
+    fn filter(&self, set: &mut dyn FeedStorage, posts: &Vec<FeedEntry>) -> Vec<FeedEntry>;
 }
 
 pub struct DefaultFilter {
@@ -32,13 +32,19 @@ impl DefaultFilter {
 }
 
 impl Filter for DefaultFilter {
-    fn filter(&self, set: &mut dyn Set, posts: &Vec<FeedEntry>) -> Vec<FeedEntry> {
+    fn filter(&self, set: &mut dyn FeedStorage, posts: &Vec<FeedEntry>) -> Vec<FeedEntry> {
         let mut to_post: Vec<FeedEntry> = vec![];
 
         for feed_entry in posts.iter() {
-            if !set.has(&feed_entry.id) {
-                to_post.push(feed_entry.clone());
-                set.insert(&feed_entry);
+            match set.has(&feed_entry.id) {
+                FeedStorageState::Posted => {}
+                FeedStorageState::Missing => {
+                    to_post.push(feed_entry.clone());
+                    set.insert(&feed_entry);
+                }
+                FeedStorageState::Resend => {
+                    to_post.push(feed_entry.clone());
+                }
             }
         }
 
@@ -50,7 +56,7 @@ impl Filter for DefaultFilter {
                 to_post.truncate(max);
             }
         }
-        
+
         to_post
     }
 }
